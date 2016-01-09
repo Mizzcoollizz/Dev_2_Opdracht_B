@@ -5,10 +5,11 @@
  */
 package Readers;
 
+import DatabaseClasses.CSVInsertManager;
 import DatabaseClasses.Database_Manager;
-import DatabaseClasses.EntityClass;
-import DatabaseClasses.HsdpaConnection;
-import DatabaseClasses.TcpClientConnection;
+import DatabaseClasses.EntityClasses.EntityClass;
+import DatabaseClasses.EntityClasses.HsdpaConnection;
+import DatabaseClasses.EntityClasses.TcpClientConnection;
 import static Readers.CSVFileReader.calculateAverageByTicks;
 import static Readers.CSVFileReader.reading;
 import java.io.BufferedReader;
@@ -43,7 +44,7 @@ public class MonitoringCSVReaderThread extends CSVFileReader {
       
       public void readAndInsertMonitoringCSV(){
           
-          reading = true;
+          CSVFileReader.setReading(true);
            if(userPath == null){
             path = MONITORING_FILE_PATH;
             }else{
@@ -79,9 +80,9 @@ public class MonitoringCSVReaderThread extends CSVFileReader {
                 catch (Exception e){
                     e.printStackTrace();
                 }
-                System.out.println("reading finished");
+                System.out.println("Reading Monitoring.csv finished");
             }
-            reading = false;
+            CSVFileReader.setReading(false);
         }
         
     }
@@ -135,7 +136,7 @@ public class MonitoringCSVReaderThread extends CSVFileReader {
                 }
                 
                 if(object != null){
-                    Database_Manager.addObjectToPersistList(object);
+                    CSVInsertManager.addObjectToPersistList(object);
                 }
                 
     }

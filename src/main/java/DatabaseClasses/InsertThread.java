@@ -5,8 +5,15 @@
  */
 package DatabaseClasses;
 
+import DatabaseClasses.EntityClasses.EntityClass;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.Resource;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceContext;
 
 /**
  *
@@ -17,29 +24,52 @@ public class InsertThread extends Database_Manager{
     /**
      * Not really working. Maybe try something else?
      */
-    List<EntityClass> objectsToPersist = null;
-    boolean running = false;
+    private List<EntityClass> objectsToPersist = null;
+    private boolean running = false;
+    @PersistenceContext(unitName="CSVInsertThread") 
+    private EntityManager em = null;
+        
+    public InsertThread(List<EntityClass> objectsToPersistList, EntityManagerFactory emf){
+        super();
+        em = emf.createEntityManager();
+      
+        em.getTransaction().begin();
+        
+        this.objectsToPersist = objectsToPersistList;
+        running = true;
+        this.start();
+    }
     
-    public InsertThread(List<EntityClass> objectsToPersistList){
-        super(null);
+    public InsertThread(List<EntityClass> objectsToPersistList, EntityManager em){
+        super();
+        this.em = em;
         this.objectsToPersist = objectsToPersistList;
         running = true;
         this.start();
     }
 
     @Override
-    public void run() {
-        
+    public void run(){
         while(running){
-        if(objectsToPersist.isEmpty()){
-        super.persistOrUpdateObject(objectsToPersist.get(0));
+        if(!objectsToPersist.isEmpty() && objectsToPersist.size() != 0){
+        super.persistOrUpdateObject(objectsToPersist.get(0), em, objectsToPersist);
+
         }else{
-         running = false;
+         stopThread();
         }
         }
     }
     
-    
-    
+    public void stopThread(){
+        running = false;
+        if(em != null && em.isOpen()){
+        if(em.getTransaction().isActive()){  
+          em.getTransaction().commit();
+        } 
+         em.close();
+        }
+         
+         CSVInsertManager.removeThread(this);
+    }
     
 }

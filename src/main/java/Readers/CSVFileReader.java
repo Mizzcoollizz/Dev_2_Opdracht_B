@@ -5,13 +5,14 @@
  */
 package Readers;
 
-import DatabaseClasses.CarPositionData;
-import DatabaseClasses.CarStatusEvent;
+import DatabaseClasses.CSVInsertManager;
+import DatabaseClasses.EntityClasses.CarPositionData;
+import DatabaseClasses.EntityClasses.CarStatusEvent;
 import DatabaseClasses.Database_Manager;
-import DatabaseClasses.EntityClass;
-import DatabaseClasses.HsdpaConnection;
-import DatabaseClasses.OverallConnection;
-import DatabaseClasses.TcpClientConnection;
+import DatabaseClasses.EntityClasses.EntityClass;
+import DatabaseClasses.EntityClasses.HsdpaConnection;
+import DatabaseClasses.EntityClasses.OverallConnection;
+import DatabaseClasses.EntityClasses.TcpClientConnection;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.math.BigDecimal;
@@ -32,11 +33,22 @@ public class CSVFileReader extends Thread{
     
     private static final int TICKS_PER_SECOND = 60;
     public static boolean reading = false;
+
+    public static boolean isReading() {
+        return reading;
+    }
+
+    public static void setReading(boolean reading) {
+       
+        CSVFileReader.reading = reading;
+         if(!reading){
+            CSVInsertManager.createNewInsertThreadIfNeeded();
+        }
+    }
     
     public CSVFileReader(){
         
     }
-
     
     protected static Date getDateByString(String string){
     
@@ -97,6 +109,7 @@ public class CSVFileReader extends Thread{
     
     
     public static void readFileByType(String type, String path){
+        System.out.println("Start: " + new Date());
         switch(type){
             case "Positions":
                new PositionsCSVReaderThread(path).start();
@@ -114,6 +127,8 @@ public class CSVFileReader extends Thread{
         }
         
     }
+    
+   
     
     
 }

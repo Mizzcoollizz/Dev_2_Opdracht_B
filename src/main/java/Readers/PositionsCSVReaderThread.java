@@ -5,12 +5,14 @@
  */
 package Readers;
 
-import DatabaseClasses.CarPositionData;
+import DatabaseClasses.CSVInsertManager;
+import DatabaseClasses.EntityClasses.CarPositionData;
 import DatabaseClasses.Database_Manager;
 import static Readers.CSVFileReader.reading;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Date;
 import static javax.swing.JOptionPane.showMessageDialog;
 
@@ -43,7 +45,7 @@ public class PositionsCSVReaderThread extends CSVFileReader{
             
     public void readAndInsertPositionsCSV(){
         
-        reading = true;
+        CSVFileReader.setReading(true);
        
         if(userPath == null){
             path = POSITIONS_FILE_PATH;
@@ -61,6 +63,7 @@ public class PositionsCSVReaderThread extends CSVFileReader{
                 showMessageDialog(null, "This file is not a Positions.csv. Please try another one.");
                 return;
             }
+            
             while ((line = br.readLine()) != null){
                 String [] lines = line.split(cvsSplitBy);
                 String dateString = lines[0];
@@ -74,6 +77,8 @@ public class PositionsCSVReaderThread extends CSVFileReader{
                 String hdop = lines[7];
                 String qualityString = lines[8];
                 String connectionType = "";
+            
+                
                 if(qualityString.toLowerCase().contains("gps")){
                     connectionType = "gps";
                 }else if(qualityString.toLowerCase().contains("dr")){
@@ -84,18 +89,20 @@ public class PositionsCSVReaderThread extends CSVFileReader{
                 float fx = Float.parseFloat(rdx);
                 float fy = Float.parseFloat(rdy);
                 
-                
                 double[] longAndLatArray = CSVFileReader.calculateLongAndLatFromRxAndRy((long)fx, (long)fy);
                 double longitude = longAndLatArray[0]; 
                 double latitude = longAndLatArray[1];
                 CarPositionData cpd = new CarPositionData(unitId, dateFormatted,
                         connectionType, latitude, longitude, Integer.parseInt(speed), Integer.parseInt(course), Integer.parseInt(hdop) );
-                Database_Manager.addObjectToPersistList(cpd);
+                
+                CSVInsertManager.addObjectToPersistList(cpd);
+                
             }
         }catch (Exception ex){   
             System.out.println(ex);
             }
          finally{
+           
             if(br != null){
                 try{
                     br.close();
@@ -104,7 +111,7 @@ public class PositionsCSVReaderThread extends CSVFileReader{
                 }
             }
             System.out.println("Reading positions.csv finished");
-            reading = false;
+            CSVFileReader.setReading(false);
         }
     }
 }

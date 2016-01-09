@@ -5,7 +5,8 @@
  */
 package Readers;
 
-import DatabaseClasses.CarStatusEvent;
+import DatabaseClasses.CSVInsertManager;
+import DatabaseClasses.EntityClasses.CarStatusEvent;
 import DatabaseClasses.Database_Manager;
 import static Readers.CSVFileReader.getDateByString;
 import static Readers.CSVFileReader.reading;
@@ -45,8 +46,7 @@ public class EventsCSVReaderThread extends CSVFileReader{
     
     public void readAndInsertEventsCSV(){
        
-        
-        reading = true;
+        CSVFileReader.setReading(true);
         if(userPath == null){
             path = EVENTS_FILE_PATH;
         }else{
@@ -74,8 +74,8 @@ public class EventsCSVReaderThread extends CSVFileReader{
                 Date dateFormatted = getDateByString(dateString); 
  
                 CarStatusEvent carStatusEvent = new CarStatusEvent(unitId, dateFormatted, port, value );
-                Database_Manager.addObjectToPersistList(carStatusEvent);
                 
+                CSVInsertManager.addObjectToPersistList(carStatusEvent);
             }
         }
         catch (Exception ex){   
@@ -90,7 +90,7 @@ public class EventsCSVReaderThread extends CSVFileReader{
                 }
             }
              System.out.println("Reading events.csv finished");
-             reading = false;
+             CSVFileReader.setReading(false);
         }   
     }
 }
