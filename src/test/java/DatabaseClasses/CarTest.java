@@ -5,6 +5,11 @@
  */
 package DatabaseClasses;
 
+import DatabaseClasses.EntityClasses.Car;
+import DatabaseClasses.EntityClasses.CarStatusEvent;
+import DatabaseClasses.EntityClasses.EntityClass;
+import DatabaseClasses.EntityClasses.HsdpaConnection;
+import DatabaseClasses.EntityClasses.OverallConnection;
 import java.util.Collection;
 import org.junit.After;
 import org.junit.AfterClass;

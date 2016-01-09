@@ -5,6 +5,10 @@
  */
 package DatabaseClasses;
 
+import DatabaseClasses.EntityClasses.Car;
+import DatabaseClasses.EntityClasses.CarPositionData;
+import DatabaseClasses.EntityClasses.CarPositionDataPK;
+import DatabaseClasses.EntityClasses.EntityClass;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
