@@ -167,7 +167,9 @@ public class User_Interface extends javax.swing.JFrame {
     }//GEN-LAST:event_sendSignalBtnMouseEntered
 
     public static void setInsertingLabelText(String text){
+        if(insertingLabel != null){
         insertingLabel.setText(text);
+        }
     }
     
     

@@ -45,7 +45,6 @@ public abstract class CSVInsertManager {
     }
     
     
-    
     private static void createEntityManagerFactoryIfNeeded(){
         if(emf == null || !emf.isOpen() && !stopped){
             emf = Persistence.createEntityManagerFactory("CSVInsertThread");
@@ -59,17 +58,14 @@ public abstract class CSVInsertManager {
           inserting = false;
           UI.User_Interface.setInsertingLabelText("false");
           System.out.println("End: " + new Date());
-        
          }
     }
     
     public static void createNewInsertThreadIfNeeded(){
-        
         createEntityManagerFactoryIfNeeded();
-         
          if(!csvObjectsToPersist.isEmpty() && insertThreads.size() <= MAX_AMOUNT_OF_THREADS && !stopped){
             if(csvObjectsToPersist.size() >= AMOUNT_OF_OBJECTS_PER_THREAD || !CSVFileReader.isReading() ){
-                                                
+                                     
                 List<EntityClass> newList = null;
                 if(!CSVFileReader.isReading()){
                  newList = new ArrayList(csvObjectsToPersist);
@@ -96,6 +92,7 @@ public abstract class CSVInsertManager {
     
     public static void removeThread(InsertThread thread){
       insertThreads.remove(thread);
+      
       if(!CSVFileReader.isReading()){
       createNewInsertThreadIfNeeded();
       }
@@ -103,7 +100,6 @@ public abstract class CSVInsertManager {
     }
     
     public static void stopAllThreads(){
-        
       inserting = false;
       stopped = true;
         try{
@@ -114,10 +110,9 @@ public abstract class CSVInsertManager {
             System.out.println(ex);
         }finally{
             if(emf != null && emf.isOpen()){
-            emf.close();
+            emf.close();     
         }
-      }
-     
+      }     
     }
     
      public static boolean isInsertThreadsMaxSize(){

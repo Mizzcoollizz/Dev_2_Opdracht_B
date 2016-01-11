@@ -32,9 +32,7 @@ public class InsertThread extends Database_Manager{
     public InsertThread(List<EntityClass> objectsToPersistList, EntityManagerFactory emf){
         super();
         em = emf.createEntityManager();
-      
         em.getTransaction().begin();
-        
         this.objectsToPersist = objectsToPersistList;
         running = true;
         this.start();
@@ -69,7 +67,7 @@ public class InsertThread extends Database_Manager{
          em.close();
         }
          
-         CSVInsertManager.removeThread(this);
+        CSVInsertManager.removeThread(this);
     }
     
 }
