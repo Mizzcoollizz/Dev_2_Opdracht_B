@@ -46,7 +46,7 @@ public abstract class CSVInsertManager {
 
     public static boolean isInserting() {
         return inserting;
-    } 
+    }  
     
     public static void addObjectToPersistList(EntityClass entity){
         
