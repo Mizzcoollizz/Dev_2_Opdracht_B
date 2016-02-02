@@ -49,7 +49,7 @@ public abstract class CSVInsertManager {
     }
     
     public static void addObjectToPersistList(EntityClass entity){
-        System.out.println("New Object: " + entity);
+        
         inserting = true;
         csvObjectsToPersist.add(entity);
         createNewInsertThreadIfNeeded();
