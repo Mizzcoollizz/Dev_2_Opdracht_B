@@ -7,23 +7,40 @@ package DatabaseClasses;
 
 import DatabaseClasses.EntityClasses.Car;
 import DatabaseClasses.EntityClasses.EntityClass;
+import DatabaseClasses.EntityClasses.Password;
+import DatabaseClasses.EntityClasses.User;
 import Readers.CSVFileReader;
 import UI.User_Interface;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceException;
+import javax.persistence.Query;
 import javax.swing.JOptionPane;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  *
@@ -40,9 +57,9 @@ public class Database_Manager extends Thread {
     private static ArrayList<EntityClass> csvObjectsToPersist = new ArrayList();
     //The amount of objects that will be processed per transaction.
     private static final int OBJECTS_PER_TRANSACTION = 100; 
-    
     private static EntityManager entityManager = null;
-    private static final String persistenceName = "DataProccesingSystemPU";
+    private static final String PERSISTENCE_UNIT_NAME = "DataProccesingSystemPU";
+
     private int count = OBJECTS_PER_TRANSACTION;
     private User_Interface ui = null;
     private static boolean running = false;
@@ -51,8 +68,12 @@ public class Database_Manager extends Thread {
      * Since it is static, this connection should last as long as the program is running.
      */    
     private static EntityManagerFactory entityManagerFactory
-              = Persistence.createEntityManagerFactory(persistenceName);
+              = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
       
+    static{
+        setOnExitActions();
+    }
+    
     public Database_Manager(User_Interface ui){
         this.ui = ui;
         setOnExitActions();
@@ -65,7 +86,7 @@ public class Database_Manager extends Thread {
     }
     
     public static String getPersistenceName() {
-        return persistenceName; 
+        return PERSISTENCE_UNIT_NAME; 
     }
     
     public static EntityManagerFactory getEntityManagerFactory() {
@@ -76,7 +97,7 @@ public class Database_Manager extends Thread {
      * This method will set the exit loop for this application.
      * When the program is exited, the connections should be closed.
      */
-    private void setOnExitActions(){
+    private static void setOnExitActions(){
           Runtime.getRuntime().addShutdownHook(new Thread(){
             @Override
             public void run()
@@ -103,7 +124,6 @@ public class Database_Manager extends Thread {
             if(!csvObjectsToPersist.isEmpty() && csvObjectsToPersist.size() > 0){
                EntityClass objectToPersist = csvObjectsToPersist.get(0);
                if(objectToPersist != null){
-               handleTransactionsForCSVFile(objectToPersist);
                ui.setInsertingLabelText("true");               
                }
             }else{
@@ -112,25 +132,18 @@ public class Database_Manager extends Thread {
                 }
             }
         }   
-    }
-    
-    private void handleTransactionsForCSVFile(EntityClass object){
-         int currentSize = csvObjectsToPersist.size();
-            if(!entityManager.getTransaction().isActive() || !entityManager.isOpen() ){
-               entityManager.getTransaction().begin();
-            }
-            
-            persistOrUpdateObject(object, entityManager, csvObjectsToPersist);
-            
-            count--;  
-            if(count == 0 || currentSize <= OBJECTS_PER_TRANSACTION){
-            entityManager.getTransaction().commit();
-            entityManager.clear();
-            count = OBJECTS_PER_TRANSACTION;
-            }
-        
-    }
-    
+    }   
+   
+    /**
+     * This method handles new objects that need to be instered into the database.
+     * First is decided whether the object is already stored in the database.
+     * If so, is needs to be merged with het the object on the database,
+     * but only if it the objects are not equal.
+     * After the objects is processed, it is removed from the objectsToPersist list.
+     * @param object: object to be persisted
+     * @param em: entitymanager to use for communicating with the database.
+     * @param objectsToPersist: the list of objects that need to be persisted.
+     */
     protected void persistOrUpdateObject(EntityClass object, 
                  EntityManager em, 
                  List<EntityClass> objectsToPersist){
@@ -150,7 +163,6 @@ public class Database_Manager extends Thread {
             }catch(PersistenceException ex){
             System.out.println("Object: " + object + ". Exception: " + ex);
         }catch(Exception ex){
-            //TODO remove the pokemon programming:/
             System.out.println(ex);
         }finally{
             objectsToPersist.remove(object);
@@ -179,7 +191,7 @@ public class Database_Manager extends Thread {
      * @param dbObject: the object found on the database.
      */
     private void update(EntityClass newObject, EntityClass dbObject, EntityManager em){
-        
+       CSVInsertManager.setNewDataInserted(true);
        EntityClass objectToPersist = newObject.mergeWithObjectFromDatabase(dbObject);
        checkIfObjectHasCar(objectToPersist, em);
        em.merge(objectToPersist);
@@ -190,6 +202,7 @@ public class Database_Manager extends Thread {
      * @param object: the entity to be inserted. 
      */
     public void persist(EntityClass object, EntityManager em){
+       CSVInsertManager.setNewDataInserted(true);
        checkIfObjectHasCar(object, em);
        em.persist(object);
     }
@@ -252,10 +265,155 @@ public class Database_Manager extends Thread {
             if(entityManagerFactory != null && entityManagerFactory.isOpen()){
             entityManagerFactory.close();
             }
+            
         }
        
     } 
     
-   
+     public static String logIn(String username, String password) {
+        EntityManager em = entityManagerFactory.createEntityManager();
+        em.getTransaction().begin();
+        Password passwordFound = em.find(Password.class, password);
+        em.getTransaction().commit();
+        em.clear();
+        em.close();
+        if(passwordFound != null && passwordFound.getUserName().equals(username)){
+            return username;
+        }else{
+            return null;
+        }
+    }
         
+     
+     /**
+      * Method to check if the report really is one of the supported reports.
+      * @param reportDataType: report to be generated
+      * @param unitId: if necessary, the unitId of the tracked car
+      * @return the JSON message to be send to the client
+      * @throws JSONException 
+      */
+    public static JSONObject getLatestReportData(String reportDataType, String unitId) throws JSONException {
+        
+        if( reportDataType.equals("Connections")
+            || reportDataType.equals("Control_Room")
+            || reportDataType.equals("Authority")   
+            || reportDataType.equals("CityGis")){
+            return getJSONReportFromDatabase(reportDataType, unitId);
+        }else{
+          JSONObject returnJSON =  new JSONObject();
+          returnJSON.put("error", "This type is not a report type!");
+          returnJSON.put("type", "error");
+          return returnJSON;
+        }
+       
+    }
+
+    /**
+     * Method to get the report data from the database, and parse it into a JSONObject.
+     * @param reportType: the type of report requested should be one of the following: 
+     * {Control_Room, Connections, Authority, CityGis}
+     * @param unitId: in case of thte Control_Room report, a unitId is necessary
+     * @return the report JSONObject
+     */
+    public static JSONObject getJSONReportFromDatabase(String reportType, String unitId){
+        
+        JSONObject returnJSON = new JSONObject();
+        try{
+        returnJSON.put("type", "report");
+        returnJSON.put("reportType", reportType);    
+        EntityManager em = entityManagerFactory.createEntityManager();
+        HashMap<String, String> querylist = getReportQueriesByReportType(reportType);
+        Iterator it = querylist.entrySet().iterator();
+        while(it.hasNext()){
+           JSONArray reportPartJsonArray = new JSONArray();
+           em.getTransaction().begin(); 
+           Map.Entry<String, String> pair = (Map.Entry) it.next();
+           String name = pair.getKey();
+           String queryString = pair.getValue();
+           //If the query needs a unit id, replace the %unit_id% string
+           if(queryString.contains("%unit_id%") && unitId != null){
+           queryString.replaceAll("%unit_id%", unitId);
+           }
+           Query query = em.createNativeQuery(queryString);
+           List resultset = query.getResultList();
+           em.getTransaction().commit();
+           for(Object result: resultset){
+               reportPartJsonArray.put(new JSONObject(result.toString()));
+           }
+           returnJSON.put(name, reportPartJsonArray);
+        }
+        em.clear();
+        em.close();
+        }catch (JSONException ex) {
+            System.out.println("An JSON error occured while getting data from the database:");
+            System.out.println(ex);
+        }catch (IllegalStateException ex){
+            System.out.println("An error occured while getting data from the database:");
+            System.out.println(ex);
+        }catch (PersistenceException ex){
+            System.out.println("An Persistence error occured while getting data from the database:");
+            System.out.println(ex);
+        }        
+        return returnJSON;
+    }
+    
+    /**
+     * 
+     * @param reportType: should be one of the following {Control_Room, Connections, Authority, CityGis}
+     * @return: a map with the name of the column as key, and the query as the value
+     */   
+    private static HashMap<String, String> getReportQueriesByReportType(String reportType){
+        File configFile = new File(reportType + "ReportQueries.properties");
+        HashMap<String, String> queriesWithColumnname = new HashMap();
+        try {
+            FileReader reader = new FileReader(configFile);
+            Properties props = new Properties();
+            props.load(reader);
+            for (Enumeration<?> names = props.propertyNames(); names.hasMoreElements(); ) {
+            String name = (String)names.nextElement();
+            String value = props.getProperty(name);
+                queriesWithColumnname.put(name.substring(reportType.length() + 1), value);
+            }
+            reader.close();
+        } catch (FileNotFoundException ex) {
+            System.out.println(ex);
+        } catch (IOException ex) {
+            System.out.println(ex);
+        }finally{
+            return queriesWithColumnname;
+        }
+    }
+    
+    
+    public static JSONObject getAllUnitIdsJSON() {
+        JSONObject returnJSON = new JSONObject();
+        try{
+
+            returnJSON.put("type", "allUnitIds");
+            JSONArray unitIds = new JSONArray();
+            EntityManager em = entityManagerFactory.createEntityManager();
+            em.getTransaction().begin();
+            Query query = em.createNativeQuery("SELECT to_json(c) FROM cars c");
+            List resultSet = query.getResultList();
+            em.getTransaction().commit();
+            for(Object unitId: resultSet){
+                unitIds.put(new JSONObject(unitId.toString()));
+            }
+            returnJSON.put("unitIds", unitIds);
+        
+        } catch (JSONException ex) {
+            System.out.println("A JSONException occured while getting all the unitIds:");
+            System.out.println(ex);
+        }catch (IllegalStateException ex){
+            System.out.println("An error occured while getting data from the database:");
+            System.out.println(ex);
+        }catch (PersistenceException ex){
+            System.out.println("An Persistence error occured while getting data from the database:");
+            System.out.println(ex);
+        }   
+        
+        return returnJSON;
+        
+    }
+    
 }

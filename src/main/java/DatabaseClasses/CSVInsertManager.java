@@ -13,6 +13,7 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.PersistenceContext;
 
 /**
  *
@@ -33,12 +34,22 @@ public abstract class CSVInsertManager {
     private static final int AMOUNT_OF_OBJECTS_PER_THREAD = 100;
     private static boolean inserting = false;
     private static boolean stopped = false;
+    private static boolean newDataInserted = false;
+
+    public static boolean isNewDataInserted() {
+        return newDataInserted;
+    }
+
+    public static void setNewDataInserted(boolean newDataInserted) {
+        CSVInsertManager.newDataInserted = newDataInserted;
+    }
 
     public static boolean isInserting() {
         return inserting;
     }
     
     public static void addObjectToPersistList(EntityClass entity){
+        System.out.println("New Object: " + entity);
         inserting = true;
         csvObjectsToPersist.add(entity);
         createNewInsertThreadIfNeeded();
@@ -58,14 +69,17 @@ public abstract class CSVInsertManager {
           inserting = false;
           UI.User_Interface.setInsertingLabelText("false");
           System.out.println("End: " + new Date());
+        
          }
     }
     
     public static void createNewInsertThreadIfNeeded(){
+        
         createEntityManagerFactoryIfNeeded();
+         
          if(!csvObjectsToPersist.isEmpty() && insertThreads.size() <= MAX_AMOUNT_OF_THREADS && !stopped){
             if(csvObjectsToPersist.size() >= AMOUNT_OF_OBJECTS_PER_THREAD || !CSVFileReader.isReading() ){
-                                     
+                                                
                 List<EntityClass> newList = null;
                 if(!CSVFileReader.isReading()){
                  newList = new ArrayList(csvObjectsToPersist);
@@ -92,7 +106,6 @@ public abstract class CSVInsertManager {
     
     public static void removeThread(InsertThread thread){
       insertThreads.remove(thread);
-      
       if(!CSVFileReader.isReading()){
       createNewInsertThreadIfNeeded();
       }
@@ -100,19 +113,21 @@ public abstract class CSVInsertManager {
     }
     
     public static void stopAllThreads(){
+        
       inserting = false;
       stopped = true;
         try{
           while(!insertThreads.isEmpty() && insertThreads != null && insertThreads.size() != 0){
                  insertThreads.get(0).stopThread();
           }   
-        }catch(Exception ex){
+      }catch(Exception ex){
             System.out.println(ex);
         }finally{
             if(emf != null && emf.isOpen()){
-            emf.close();     
+            emf.close();
         }
-      }     
+      }
+     
     }
     
      public static boolean isInsertThreadsMaxSize(){

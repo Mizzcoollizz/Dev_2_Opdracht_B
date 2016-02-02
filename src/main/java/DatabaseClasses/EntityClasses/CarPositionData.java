@@ -220,27 +220,6 @@ public class CarPositionData implements Serializable, EntityClass {
       return dbCPD;
     }
 
-   
-    public EntityClass findObjectInDatabase(EntityManager em) {
-        CarPositionDataPK cpdPK = this.getCarPositionDataPK();
-        String string = "SELECT c FROM CarPositionData c "
-                + "WHERE c.carPositionDataPK.connectionType = :connectionType "
-                + "AND c.carPositionDataPK.unitId = :unitId "
-                + "AND c.carPositionDataPK.eventDate = :eventDate";
-        
-         TypedQuery<CarPositionData> query = em.createQuery(string, CarPositionData.class)
-                .setParameter("connectionType", cpdPK.getConnectionType())
-                .setParameter("unitId", cpdPK.getUnitId())
-                .setParameter("eventDate", cpdPK.getEventDate());
-        
-         if(!query.getResultList().isEmpty()){
-          return query.getSingleResult();
-         }else{
-          return null;
-         }
-       
-        
-    }
     
     
     

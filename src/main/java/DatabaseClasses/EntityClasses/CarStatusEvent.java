@@ -176,22 +176,5 @@ public class CarStatusEvent implements Serializable, EntityClass{
       
     }
 
- 
-    public EntityClass findObjectInDatabase(EntityManager em) {
-        CarStatusEventPK pk = this.getCarStatusEventPK();
-        
-        String string = "SELECT c FROM CarStatusEvent c WHERE c.carStatusEventPK.unitId = :unitId"
-                + " AND c.carStatusEventPK.eventDate = :eventDate";
-    
-        TypedQuery<CarStatusEvent> query = em.createQuery(string, CarStatusEvent.class)
-                .setParameter("unitId", pk.getUnitId())
-                .setParameter("eventDate", pk.getEventDate());
-        if(!query.getResultList().isEmpty()){
-            return query.getSingleResult();
-        }else{
-            return null;
-        }
-        
-    }
     
 }

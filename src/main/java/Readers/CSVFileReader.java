@@ -15,8 +15,15 @@ import DatabaseClasses.EntityClasses.OverallConnection;
 import DatabaseClasses.EntityClasses.TcpClientConnection;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -24,6 +31,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  *
@@ -33,6 +42,8 @@ public class CSVFileReader extends Thread{
     
     private static final int TICKS_PER_SECOND = 60;
     public static boolean reading = false;
+    
+    static final String CSV_SPLIT_BY = ";"; //splits file bij elke ;
 
     public static boolean isReading() {
         return reading;
@@ -45,10 +56,12 @@ public class CSVFileReader extends Thread{
             CSVInsertManager.createNewInsertThreadIfNeeded();
         }
     }
-    
+   
     public CSVFileReader(){
-        
+       
     }
+
+    
     
     protected static Date getDateByString(String string){
     
@@ -107,9 +120,28 @@ public class CSVFileReader extends Thread{
         return latAndLongArray;
     }
     
+    private static void readLineByType(String type, String line){
+        
+        String[] lines = line.split(CSV_SPLIT_BY);
+         switch(type){
+            case "Positions":
+               PositionsCSVReaderThread.readAndInsertLine(lines);
+               break;
+            case "Events":
+               EventsCSVReaderThread.readAndInsertLine(lines);
+                break;
+            case "Monitoring":
+                MonitoringCSVReaderThread.getMonitoringObjectFound(lines);
+                break;
+            case "Connections":
+                ConnectionsCSVReaderThread.readAndInsertLine(lines);
+                break;
+            
+        }
+    }
     
     public static void readFileByType(String type, String path){
-        System.out.println("Start: " + new Date());
+        System.out.println("Started reading: " + new Date());
         switch(type){
             case "Positions":
                new PositionsCSVReaderThread(path).start();
