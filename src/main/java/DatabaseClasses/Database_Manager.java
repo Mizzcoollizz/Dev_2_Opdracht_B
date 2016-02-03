@@ -54,7 +54,7 @@ public class Database_Manager extends Thread {
      * Some of these objects are already in the database, 
      * but they will be handled in the the persistOrUpdateObject function.
      */
-    private static ArrayList<EntityClass> csvObjectsToPersist = new ArrayList();
+    private static ArrayList<EntityClass> csvObjectsToPersist = new ArrayList();  
     //The amount of objects that will be processed per transaction.
     private static final int OBJECTS_PER_TRANSACTION = 100; 
     private static EntityManager entityManager = null;
