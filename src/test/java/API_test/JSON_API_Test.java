@@ -15,7 +15,7 @@ import org.junit.runner.RunWith;
  */
 
 @RunWith(Cucumber.class)
-@CucumberOptions(features="C:\\Users\\School\\Documents\\HBO\\2\\Project 1\\Code\\Github\\DataVerwerkingsSysteem_Dev_B\\src\\test\\java\\API_Test\\json_api_acceptance_test.feature")
+@CucumberOptions(features="src\\test\\java\\API_Test\\json_api_acceptance_test.feature")
 public class JSON_API_Test {
     
 }
